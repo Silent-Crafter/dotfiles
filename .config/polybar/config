@@ -1,0 +1,289 @@
+[colors]
+background = #4444
+background-alt = #7111
+foreground = #eee
+foreground-alt = #def
+primary = #ffb52a
+secondary = #e60053
+alert = #bd2c40
+
+[bar/main]
+monitor = ${env:MONITOR:eDP1}
+width = 100%
+offset-x =
+offset-y =
+height = 30px
+;radius = 12.0
+fixed-center = false
+bottom = false
+
+separator =
+
+background = ${colors.background}
+foreground = ${colors.foreground}
+
+border-size = 3
+border-color = #7000
+line-size = 1
+padding = 0
+module-margin = 0
+
+font-0 = "feather:size=11;2"
+font-2 = "JetBrains Mono Nerd Font:size=11;2"
+font-1 = "material:size=11;2"
+font-3 = JoyPixels:scale=11;2
+
+modules-left = bspwm xwindow
+modules-center =
+modules-right = github info-hackspeed eth wlan cpu battery backlight pulseaudio date
+
+tray-position = right
+tray-padding = 2
+tray-maxsize = 24
+
+wm-restack = bspwm
+
+[global/wm]
+margin-top = 2
+
+[module/xwindow]
+type = internal/xwindow
+
+format = <label>
+format-prefix = "| "
+format-padding = 1
+label-background = ${colors.background-alt}
+label = " %title:0:30:...% "
+
+[module/bspwm]
+type = internal/bspwm
+pin-workspaces = false
+enable-click = true
+enable-scroll = false
+
+label-focused = " %name% "
+label-focused-background = ${colors.background-alt}
+label-focused-underline = #fba922
+
+label-occupied = " %name% "
+label-occupied-foreground = #ffaa00
+
+label-urgent = " %name% "
+label-urgent-underline = #9b0a20
+
+label-empty =
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format-prefix = "  "
+
+format-underline = #a00f
+format-foreground = ${colors.foreground-alt}
+format-background = #4009
+
+label = "%percentage:2%% "
+
+[module/wlan]
+type = internal/network
+interface = wlp2s0
+
+interval = 1
+
+; Accumulate values from all interfaces
+; when querying for up/downspeed rate
+; Default: false
+accumulate-stats = true
+
+; Consider an `UNKNOWN` interface state as up.
+; Some devices like USB network adapters have 
+; an unknown state, even when they're running
+; Default: false
+unknown-as-up = true
+
+format-connected = <label-connected>
+
+format-disconnected = <label-disconnected>
+
+format-packetloss = <label-connected>
+
+; All labels support the following tokens:
+;   %ifname%    [wireless+wired]
+;   %local_ip%  [wireless+wired]
+;   %local_ip6% [wireless+wired]
+;   %essid%     [wireless]
+;   %signal%    [wireless]
+;   %upspeed%   [wireless+wired]
+;   %downspeed% [wireless+wired]
+;   %linkspeed% [wired]
+
+label-connected = "  %downspeed:2% "
+label-connected-foreground = ${colors.foreground-alt}
+label-connected-background = #4109
+label-connected-underline = #70f
+
+[module/eth]
+type = internal/network
+interface = enp1s0
+interval = 3.0
+
+format-connected-underline = #55aa55
+format-connected-overline = #55aa55
+format-connected-prefix = "🖧 "
+format-connected-prefix-foreground = ${colors.foreground-alt}
+label-connected = %local_ip%
+
+format-disconnected =
+
+[module/date]
+type = internal/date
+interval = 5
+
+date = "%a %d"
+date-alt = %a %b %d
+
+time = %I:%M
+time-alt = %I:%M%p
+
+format-prefix =
+format-foreground = ${colors.foreground-alt}
+format-background = #4900
+format-underline = #f00
+
+label = " %date% %time% "
+
+[module/github]
+type = internal/github
+token = ${file:/home/silentcrafter/.config/github/notifications.token}
+user = Silent-Crafter
+empty-notifications = false
+label = %{u#ff9900 +u} %notifications% %{u-}
+;label = %{u#0099ff +u} 📫 %{u-}
+interval = 10
+
+[module/battery]
+type = internal/battery
+
+; This is useful in case the battery never reports 100% charge
+full-at = 99
+
+battery = BAT0
+adapter = AC
+
+poll-interval = 5
+
+; see "man date" for details on how to format the time string
+time-format = %H:%M
+
+; Available tags:
+;   <label-charging> (default)
+;   <bar-capacity>
+;   <ramp-capacity>
+;   <animation-charging>
+format-charging = " <label-charging> "
+format-charginf-foreground = ${colors.foreground-alt}
+format-charging-background = #4090
+format-charging-underline = #0f0
+
+format-discharging = " <ramp-capacity> <label-discharging> "
+format-discharging-background = #4090
+format-discharging-foreground = ${colors.foreground-alt}
+format-discharging-underline = #0f0
+
+format-full = " <ramp-capacity> <label-full> "
+format-full-background = #4090
+format-full-foreground = ${colors.foreground-alt}
+format-full-underline = #0f0
+
+; Available tokens:
+;   %percentage% (default) - is set to 100 if full-at is reached
+;   %percentage_raw%
+;   %time%
+;   %consumption% (shows current charge rate in watts)
+label-charging = "  %percentage%%"
+label-discharging = "%percentage%%"
+
+; Only applies if <ramp-capacity> is used
+ramp-capacity-0 = " "
+ramp-capacity-0-foreground = #ff00
+ramp-capacity-1 = " "
+ramp-capacity-2 = " "
+ramp-capacity-3 = " "
+ramp-capacity-4 = " "
+
+; Only applies if <bar-capacity> is used
+bar-capacity-width = 10
+
+; Only applies if <animation-charging> is used
+
+; Framerate in milliseconds
+animation-charging-framerate = 750
+
+; Only applies if <animation-discharging> is used
+;animation-discharging-0 = 
+;animation-discharging-1 = 
+;animation-discharging-2 = 
+;animation-discharging-3 = 
+;animation-discharging-4 = 
+
+; Framerate in milliseconds
+animation-discharging-framerate = 500
+
+[module/backlight]
+type = internal/xbacklight
+
+; XRandR output to get get values from
+; Default: the monitor defined for the running bar
+output = eDP1
+
+; Create scroll handlers used to set the backlight value
+; Default: true
+enable-scroll = false
+
+; Available tags:
+;   <label> (default)
+;   <ramp>
+;   <bar>
+format = <ramp> <label>
+format-foreground = ${colors.foreground-alt}
+format-background = #4990
+format-underline = #aff0
+
+; Available tokens:
+;   %percentage% (default)
+label = "%percentage%% "
+
+; Only applies if <ramp> is used
+ramp-3 = " "
+ramp-2 = " "
+ramp-1 = " "
+ramp-0 = " "
+
+[module/pulseaudio]
+type = internal/pulseaudio
+
+format-volume = <label-volume>
+format-volume-background= #7940
+format-volume-underline = #fa0
+
+label-volume = " VOL %percentage%% "
+label-volume-foreground = ${colors.foreground-alt}
+
+label-muted = muted
+label-muted-foreground = #666
+
+click-right = pavucontrol
+
+[module/info-hackspeed]
+type = custom/script
+exec = ~/polybar-scripts/info-hackspeed.sh
+tail = true
+
+format-underline = #aa0f
+format-foreground = ${colors.forground-alt}
+format-background = #7419
+
+[settings]
+screenchange-reload = true
+
+; vim:ft=dosini

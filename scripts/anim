@@ -1,0 +1,25 @@
+#!/bin/bash
+for i in {1..50}
+do
+  bspc node -z top 0 -5
+  bspc node -z bottom 0 5
+  sleep 0.03
+done
+
+sleep 0.5
+
+for i in {1..45}
+do
+  bspc node -z left -10 0
+  bspc node -z right 10 0
+  sleep 0.03
+done
+bspc rule -r kitty
+sleep 0.5
+echo -e "\n\n\n"
+echo -e "WHAT'S\nUP\nBITCH!" | figlet -ct | lolcat -ad 1
+sleep 0.5
+bspc node -t tiled
+clear
+sleep 0.5
+bash
