@@ -7,23 +7,36 @@ synclient TapButton3=2
 picom --experimental-backends -b
 nitrogen --restore
 $HOME/.config/polybar/launch.sh
+xfce4-power-manager 2> /dev/null & disown
+xss-lock --transfer-sleep-lock -- i3lock-fancy --nofork -gt 'unlock me' -f hack & disown
 
 pgrep -x sxhkd > /dev/null || sxhkd &
 
 bspc monitor -d 1 2 3 4 5 6 7 8 9 10
 
 bspc config border_width         2
+bspc config active_border_color	"#0000ff"
 bspc config window_gap          12
 
 bspc config split_ratio          0.52
 bspc config borderless_monocle   false
 bspc config gapless_monocle      false
 
+bspc config presel_feedback_color "#123489"
+bspc config focus_follows_pointer true
+
 bspc rule -a Gimp desktop='^8' state=floating follow=on
-bspc rule -a TelegramDesktop desktop='^2' state=floating follow=on
+bspc rule -a TelegramDesktop state=floating follow=on
 bspc rule -a Zathura state=tiled
 bspc rule -a Chromium desktop='^2'
 bspc rule -a mplayer2 state=floating
 bspc rule -a Kupfer.py focus=on
 bspc rule -a Screenkey manage=off
 bspc rule -a zoom state=floating
+bspc rule -a anbox state=floating
+
+mpc clear
+mpc add welcome.mp3
+mpc play
+#sleep 1
+#$HOME/scripts/startup

@@ -10,8 +10,8 @@ alert = #bd2c40
 [bar/main]
 monitor = ${env:MONITOR:eDP1}
 width = 100%
-offset-x =
-offset-y =
+;offset-x =
+;offset-y =
 height = 30px
 ;radius = 12.0
 fixed-center = false
@@ -280,7 +280,7 @@ exec = ~/polybar-scripts/info-hackspeed.sh
 tail = true
 
 format-underline = #aa0f
-format-foreground = ${colors.forground-alt}
+format-foreground = ${colors.foreground-alt}
 format-background = #7419
 
 [settings]

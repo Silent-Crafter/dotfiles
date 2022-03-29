@@ -39,8 +39,15 @@ case $chosen in
     $shutdown)
 		ans=$(confirm_exit &)
 		if [[ $ans == "yes" || $ans == "YES" || $ans == "y" || $ans == "Y" ]]; then
+			mpc clear
+			mpc add bye.mp3
+			mpc play
+			sleep 1
 			systemctl poweroff
 		elif [[ $ans == "no" || $ans == "NO" || $ans == "n" || $ans == "N" ]]; then
+			mpc clear
+			mpc add ara_ara.mp3
+			mpc play
 			exit 0
         else
 			msg
@@ -51,6 +58,9 @@ case $chosen in
 		if [[ $ans == "yes" || $ans == "YES" || $ans == "y" || $ans == "Y" ]]; then
 			systemctl reboot
 		elif [[ $ans == "no" || $ans == "NO" || $ans == "n" || $ans == "N" ]]; then
+			mpc clear
+			mpc add ara_ara.mp3
+			mpc play
 			exit 0
         else
 			msg
@@ -58,7 +68,7 @@ case $chosen in
         ;;
     $lock)
 		if [[ -f /usr/bin/i3lock-fancy ]]; then
-			i3lock-fancy -pt 'unlock me muthafuckaa'
+			i3lock-fancy -gt 'unlock me muthafuckaa' -f Hack
 		elif [[ -f /usr/bin/betterlockscreen ]]; then
 			betterlockscreen -l
 		fi
@@ -70,6 +80,9 @@ case $chosen in
 			amixer set Master mute
 			systemctl suspend
 		elif [[ $ans == "no" || $ans == "NO" || $ans == "n" || $ans == "N" ]]; then
+			mpc clear
+			mpc add ara_ara.mp3
+			mpc play
 			exit 0
         else
 			msg
@@ -81,6 +94,10 @@ case $chosen in
 			if [[ "$DESKTOP_SESSION" == "Openbox" ]]; then
 				openbox --exit
 			elif [[ "$DESKTOP_SESSION" == "bspwm" ]]; then
+				mpc clear
+				mpc add bye.mp3
+				mpc play
+				sleep 1
 				bspc quit
 			elif [[ "$DESKTOP_SESSION" == "i3" ]]; then
 				i3-msg exit
@@ -88,6 +105,9 @@ case $chosen in
                                 pkill -TERM dwm 
 			fi
 		elif [[ $ans == "no" || $ans == "NO" || $ans == "n" || $ans == "N" ]]; then
+			mpc clear
+			mpc add ara_ara.mp3
+			mpc play
 			exit 0
         else
 			msg

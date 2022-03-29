@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#mpc clear
+#mpc add welcome.mp3
+#mpc play
+
+bspc rule -a kitty state=floating rectangle=238x204+562+298
+kitty $HOME/scripts/startup.anim & disown
+
+sleep 4
+
+bspc node --presel-dir south --presel-ratio 0.7
+kitty btop & disown
+
+sleep 0.5
+
+bspc node -f next.local.!hidden.window

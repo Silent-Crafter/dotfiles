@@ -1,4 +1,0 @@
-#!/bin/bash
-
-bspc rule -a kitty state=floating rectangle=438x204+462+298
-kitty $HOME/scripts/anim & disown

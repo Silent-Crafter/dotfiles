@@ -49,7 +49,7 @@ super + Escape
 # bspwm hotkeys
 #
 super + alt + Return
-	~/scripts/start
+	~/scripts/startup
 
 ctrl + alt + shift + m
 	~/scripts/matrix
