@@ -17,13 +17,13 @@ fi
 if [[ ! -z "$2" ]]; then
 	resolution="$2"
 else
-	resolution="1280x720"
+	resolution="1366x768"
 fi
 
 if [[ ! -z "$3" ]]; then
 	preset="$3"
 else
-	preset="superfast"
+	preset="veryfast"
 fi
 
 echo 'recording will begin in 5 sec'

@@ -1,14 +1,15 @@
 #! /bin/sh
 
-synclient TapButton1=1
-synclient TapButton2=3
-synclient TapButton3=2
-
 picom --experimental-backends -b
 nitrogen --restore
 $HOME/.config/polybar/launch.sh
+fcitx5 2> /dev/null &
 xfce4-power-manager 2> /dev/null & disown
-xss-lock --transfer-sleep-lock -- i3lock-fancy --nofork -gt 'unlock me' -f hack & disown
+$HOME/.local/bin/locker & disown
+
+# ========== GUI AUTHINTICATOR ==========
+/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 & disown
+# =======================================
 
 pgrep -x sxhkd > /dev/null || sxhkd &
 

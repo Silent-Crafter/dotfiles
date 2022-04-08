@@ -109,7 +109,7 @@
     max_icon_size = 40
 
     # Paths to default icons.
-    icon_path = /home/silentcrafter/.local/share/icons/dracula-icons-main/scalable/apps:/usr/share/icons/Adwaita/256x256/legacy
+    icon_path = /home/silentcrafter/.local/share/icons/tokyonight_dark/status/48:/usr/share/icons/Papirus-Dark/48x48/status
 
     # --- History --- #
 
