@@ -1,8 +1,9 @@
+source $HOME/.profile
 # ==============================================
 # =====        OH-BY-BASH STUFF           ======
 # ==============================================
 # Path to your oh-my-bash installation.
-OSH=/home/silentcrafter/.oh-my-bash
+OSH=$XDG_DATA_HOME/oh-my-bash
 
 # Set name of the theme to load. Optionally, if you set this to "random"
 # it'll load a random theme each time that oh-my-bash is loaded.
@@ -62,6 +63,7 @@ completions=(
 # Add wisely, as too many aliases slow down shell startup.
 aliases=(
   general
+  ls
 )
 
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-bash/plugins/*)
@@ -119,7 +121,7 @@ bind '"\C-o":"lfcd\C-m"'
 
 [[ -s /etc/profile.d/autojump.sh ]] && source /etc/profile.d/autojump.sh
 
-export PATH=$PATH:/home/silentcrafter/.emacs.d/bin:/home/silentcrafter/.local/bin
+export PATH=$PATH:/home/silentcrafter/.local/bin
 
 bind '"\C-e":"ranger\C-m"'
 
@@ -140,4 +142,7 @@ fi
 if test -n "$KITTY_INSTALLATION_DIR" -a -e "$KITTY_INSTALLATION_DIR/shell-integration/bash/kitty.bash"; then source "$KITTY_INSTALLATION_DIR/shell-integration/bash/kitty.bash"; fi
 # END_KITTY_SHELL_INTEGRATION
 
+source $HOME/.cnf_install.bash
+
 cowsay $(fortune) | lolcat
+. "$CARGO_HOME/env"

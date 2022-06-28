@@ -8,7 +8,7 @@ secondary = #e60053
 alert = #bd2c40
 
 [bar/main]
-monitor = ${env:MONITOR:eDP1}
+monitor = ${env:MONITOR:eDP-1}
 width = 100%
 ;offset-x =
 ;offset-y =
@@ -234,7 +234,7 @@ type = internal/xbacklight
 
 ; XRandR output to get get values from
 ; Default: the monitor defined for the running bar
-output = eDP1
+output = eDP-1
 
 ; Create scroll handlers used to set the backlight value
 ; Default: true

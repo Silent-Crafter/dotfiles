@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 downloader=wget
 $downloader "$(echo "$1" | sed 's/github/raw.githubusercontent/;s/blob\///')" ${*/$1/}

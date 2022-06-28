@@ -29,7 +29,7 @@ zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}'
 zstyle :compinstall filename '/home/silentcrafter/.zshrc'
 
 autoload -Uz compinit
-compinit -d "$XDG_CACHE_HOME"/zsh/zcompdump-"$ZSH_VERSION"
+compinit
 # End of lines added by compinstall
 
 # ===============================================
