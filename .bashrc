@@ -121,7 +121,7 @@ bind '"\C-o":"lfcd\C-m"'
 
 [[ -s /etc/profile.d/autojump.sh ]] && source /etc/profile.d/autojump.sh
 
-export PATH=$PATH:/home/silentcrafter/.local/bin
+export PATH=$PATH:$HOME/.local/bin
 
 bind '"\C-e":"ranger\C-m"'
 
@@ -145,4 +145,3 @@ if test -n "$KITTY_INSTALLATION_DIR" -a -e "$KITTY_INSTALLATION_DIR/shell-integr
 source $HOME/.cnf_install.bash
 
 cowsay $(fortune) | lolcat
-. "$CARGO_HOME/env"
