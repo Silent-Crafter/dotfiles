@@ -2,6 +2,7 @@
 #  ---------------------------------------------------------------------------
 
 # Directory Listing aliases
+alias ls='ls --group-directories-first --color=always -v'
 alias dir='ls -hFx'
 alias l.='ls -d .* --color=tty' # short listing, only hidden files - .*
 alias l='ls -lathF'             # long, sort by newest to oldest

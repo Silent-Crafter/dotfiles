@@ -2,7 +2,7 @@ let &t_ut=''
 
 filetype plugin indent on
 set number
-
+set shiftwidth=4
 
 call plug#begin()
   Plug 'preservim/nerdtree'

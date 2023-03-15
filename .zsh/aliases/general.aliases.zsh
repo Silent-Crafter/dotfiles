@@ -18,8 +18,7 @@
 alias cp='cp -iv'                 		# Preferred 'cp' implementation
 alias mv='mv -iv'                           	# Preferred 'mv' implementation
 alias mkdir='mkdir -p' 				# Preferred 'mkdir' implementation
-alias ls='lsd'					# Replace ls with lsd
-alias ll='lsd -lAFh'                         	# Preferred 'ls' implementation
+alias ll='ls -lAFh'                         	# Preferred 'ls' implementation
 alias less='less -FSRXc'                    	# Preferred 'less' implementation
 alias nano='nano -W'                        	# Preferred 'nano' implementation
 alias wget='wget -c'                        	# Preferred 'wget' implementation (resume download)
@@ -58,3 +57,8 @@ alias paheplay='mpv --profile=animepahe'
 alias wget=wget --hsts-file="$XDG_DATA_HOME/wget-hsts"
 
 alias git-clone='git clone https://github.com/'
+alias lsblk='lsblk -o NAME,MAJ:MIN,RM,SIZE,RO,TYPE,FSTYPE,MOUNTPOINTS'
+#alias rm='trash -v'
+alias docker='sudo docker'
+alias reboot='loginctl reboot'
+alias poweroff='loginctl poweroff'

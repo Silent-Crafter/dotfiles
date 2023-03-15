@@ -5,7 +5,6 @@ source $HOME/.profile
 # ==================================================
 
 
-export PATH="$HOME/.local/bin:$PATH"
 cowsay $(fortune) | lolcat
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
@@ -19,8 +18,9 @@ ZSH_PLUGIN="$HOME/.zsh/plugins"
 
 # Lines configured by zsh-newuser-install
 HISTFILE=$HOME/.histfile
-HISTSIZE=1000
-SAVEHIST=1000
+HISTSIZE=2147483647
+SAVEHIST=2147483647
+setopt hist_ignore_all_dups
 setopt extendedglob nomatch notify
 setopt autocd
 bindkey -e
@@ -87,9 +87,16 @@ bindkey  "^[[3~"  delete-char
 bindkey "^[[1;3C" forward-word
 bindkey "^[[1;3D" backward-word
 
-source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
+source $HOME/.zsh/themes/powerlevel10k/powerlevel10k.zsh-theme
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 [[ -s /etc/profile.d/autojump.sh ]] && source /etc/profile.d/autojump.sh
 eval $(thefuck --alias)
+if test -n "$KITTY_INSTALLATION_DIR"; then
+    export KITTY_SHELL_INTEGRATION="no-cursor no-title"
+    autoload -Uz -- "$KITTY_INSTALLATION_DIR"/shell-integration/zsh/kitty-integration
+    kitty-integration
+    unfunction kitty-integration
+fi
+cd
