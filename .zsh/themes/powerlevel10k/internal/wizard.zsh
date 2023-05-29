@@ -222,12 +222,7 @@ function hide_cursor() {
 }
 
 function show_cursor() {
-  local cnorm=${terminfo[cnorm]-}
-  if [[ $cnorm == *$'\e[?25h'(|'\e'*) ]]; then
-    print -n '\e[?25h'
-  else
-    print -n $cnorm
-  fi
+  echoti cnorm 2>/dev/null
 }
 
 function consume_input() {
@@ -988,15 +983,6 @@ function ask_color() {
   return 0
 }
 
-function print_frame_marker() {
-  local label="(1)  $color_name[1]."
-  local -i n='wizard_columns - 7'
-  local -i m=$((n - $#label))
-  print -P "${(l:$n:: :)}frame"
-  print -P "%B$label%b${(l:$m:: :)}    |"
-  print -P "${(l:$n:: :)}    v"
-}
-
 function ask_ornaments_color() {
   [[ $style != (rainbow|lean*) || $num_lines == 1 ]] && return
   [[ $gap_char == ' ' && $left_frame == 0 && $right_frame == 0 ]] && return
@@ -1004,17 +990,10 @@ function ask_ornaments_color() {
   [[ $gap_char != ' ' ]]          && ornaments+=Connection
   (( left_frame || right_frame )) && ornaments+=Frame
   add_widget 0 flowing -c "%B${(j: & :)ornaments} Color%b"
-  if (( left_frame || right_frame )); then
-    add_widget 0 print_frame_marker
-    add_widget 3 print -P "%B(1)  $color_name[1].%b"
-    add_prompt_n color=1
-    add_widget 0 print
-    add_widget 2
-  else
-    add_widget 1
-    add_widget 0 print -P "%B(1)  $color_name[1].%b"
-    add_prompt color=1
-  fi
+  add_widget 0 print
+  add_widget 1
+  add_widget 0 print -P "%B(1)  $color_name[1].%b"
+  add_prompt color=1
   add_widget 0 print -P "%B(2)  $color_name[2].%b"
   add_prompt color=2
   add_widget 0 print -P "%B(3)  $color_name[3].%b"
@@ -1465,7 +1444,7 @@ function print_instant_prompt_link() {
 }
 
 function ask_instant_prompt() {
-  if [[ $ZSH_VERSION != (5.<4->*|<6->.*) ]]; then
+  if ! is-at-least 5.4; then
     instant_prompt=off
     options+=instant_prompt=auto-off
     return 0
@@ -1565,11 +1544,8 @@ function ask_config_overwrite() {
         local tmpdir=/tmp
         local tmpdir_u=/tmp
       fi
-      if (( ! $+commands[mktemp] )) ||
-         ! config_backup=$(mktemp $tmpdir/$__p9k_cfg_basename.XXXXXXXXXX 2>/dev/null); then
-        config_backup=$tmpdir/$__p9k_cfg_basename.$EPOCHREALTIME
-      fi
-      cp $__p9k_cfg_path $config_backup || quit -c
+      config_backup="$(mktemp $tmpdir/$__p9k_cfg_basename.XXXXXXXXXX)" || quit -c
+      cp $__p9k_cfg_path $config_backup                                        || quit -c
       config_backup_u=$tmpdir_u/${(q-)config_backup:t}
     ;;
   esac
@@ -1638,10 +1614,7 @@ function ask_zshrc_edit() {
           local tmpdir=/tmp
           local tmpdir_u=/tmp
         fi
-        if (( ! $+commands[mktemp] )) ||
-           ! zshrc_backup="$(mktemp $tmpdir/.zshrc.XXXXXXXXXX 2>/dev/null)"; then
-          zshrc_backup=$tmpdir/.zshrc.$EPOCHREALTIME
-        fi
+        zshrc_backup="$(mktemp $tmpdir/.zshrc.XXXXXXXXXX)" || quit -c
         cp -p $__p9k_zshrc $zshrc_backup                   || quit -c
         local -i writable=1
         if [[ ! -w $zshrc_backup ]]; then
@@ -2029,9 +2002,10 @@ else
   _p9k_can_configure -q || return
 fi
 
-zmodload zsh/terminfo zsh/datetime || return
+zmodload zsh/terminfo                     || return
+autoload -Uz is-at-least                  || return
 
-if [[ $ZSH_VERSION == (5.7.<1->*|5.<8->*|<6->.*) && $COLORTERM == (24bit|truecolor) ]]; then
+if is-at-least 5.7.1 && [[ $COLORTERM == (24bit|truecolor) ]]; then
   local -ir has_truecolor=1
 else
   local -ir has_truecolor=0

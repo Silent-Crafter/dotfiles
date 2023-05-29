@@ -20,7 +20,7 @@ if [[ $__p9k_sourced != 13 ]]; then
   return 1
 fi
 
-if [[ $ZSH_VERSION != (5.<1->*|<6->.*) ]]; then
+if ! autoload -Uz is-at-least || ! is-at-least 5.1; then
   () {
     >&2 echo -E "You are using ZSH version $ZSH_VERSION. The minimum required version for Powerlevel10k is 5.1."
     >&2 echo -E "Type 'echo \$ZSH_VERSION' to see your current zsh version."
@@ -31,8 +31,8 @@ if [[ $ZSH_VERSION != (5.<1->*|<6->.*) ]]; then
       >&2 echo -E "The shell you are currently running is likely $cur."
     fi
     local other=${${:-zsh}:c}
-    if [[ -n $other ]] && $other -fc '[[ $ZSH_VERSION == (5.<1->*|<6->.*) ]]' &>/dev/null; then
-      local other_v="$($other -fc 'echo -E $ZSH_VERSION' 2>/dev/null)"
+    if [[ -n $other ]] && $other -c 'autoload -Uz is-at-least && is-at-least 5.1' &>/dev/null; then
+      local other_v="$($other -c 'echo -E $ZSH_VERSION' 2>/dev/null)"
       if [[ -n $other_v && $other_v != $ZSH_VERSION ]]; then
         >&2 echo -E "You have $other with version $other_v but this is not what you are using."
         if [[ -n $def && $def != ${other:A} ]]; then
@@ -233,7 +233,7 @@ function _p9k_fetch_cwd() {
   _p9k__parent_mtimes_s="$_p9k__parent_mtimes_i"
 }
 
-# Usage: _p9k_glob parent_dir_index pattern [glob_qual]
+# Usage: _p9k_glob parent_dir_index pattern
 #
 # parent_dir_index indexes _p9k__parent_dirs.
 #
@@ -250,12 +250,12 @@ function _p9k_glob() {
   fi
   local -a stat
   zstat -A stat +mtime -- $dir 2>/dev/null || stat=(-1)
-  eval 'local files=($dir/$~2('$3'N:t))'
+  local files=($dir/$~2(N:t))
   _p9k__glob_cache[$dir/$2]="$stat[1]:$#files"
   return $#files
 }
 
-# Usage: _p9k_upglob pattern [glob_qual]
+# Usage: _p9k_upglob pattern
 #
 # Returns index within _p9k__parent_dirs or 0 if there is no match.
 #
@@ -273,7 +273,7 @@ function _p9k_upglob() {
     cached[-1]=()
     local -i i
     for i in ${(@)${cached:|_p9k__parent_mtimes_i}%:*}; do
-      _p9k_glob $i "$@" && continue
+      _p9k_glob $i $1 && continue
       _p9k__upsearch_cache[$_p9k__cwd/$1]="${_p9k__parent_mtimes_i[1,i]} $i"
       return i
     done
@@ -286,7 +286,7 @@ function _p9k_upglob() {
     local -i i=1
   fi
   for ((; i <= $#_p9k__parent_mtimes; ++i)); do
-    _p9k_glob $i "$@" && continue
+    _p9k_glob $i $1 && continue
     _p9k__upsearch_cache[$_p9k__cwd/$1]="${_p9k__parent_mtimes_i[1,i]} $i"
     return i
   done
@@ -341,7 +341,7 @@ function _p9k_human_readable_bytes() {
   _p9k__ret=${${_p9k__ret%%0#}%.}$suf
 }
 
-if [[ $ZSH_VERSION == (5.<4->*|<6->.*) ]]; then
+if is-at-least 5.4; then
   function _p9k_print_params() { typeset -p -- "$@" }
 else
   # Cannot use `typeset -p` unconditionally because of bugs in zsh.
@@ -1212,7 +1212,7 @@ _p9k_prompt_aws_init() {
 ################################################################
 # Current Elastic Beanstalk environment
 prompt_aws_eb_env() {
-  _p9k_upglob .elasticbeanstalk -/ && return
+  _p9k_upglob .elasticbeanstalk && return
   local dir=$_p9k__parent_dirs[$?]
 
   if ! _p9k_cache_stat_get $0 $dir/.elasticbeanstalk/config.yml; then
@@ -1304,21 +1304,25 @@ function _p9k_read_file() {
 }
 
 function _p9k_fvm_old() {
-  _p9k_upglob fvm @ && return 1
+  _p9k_upglob fvm && return 1
   local fvm=$_p9k__parent_dirs[$?]/fvm
-  if [[ ${fvm:A} == (#b)*/versions/([^/]##)/bin/flutter ]]; then
-    _p9k_prompt_segment prompt_fvm blue $_p9k_color1 FLUTTER_ICON 0 '' ${match[1]//\%/%%}
-    return 0
+  if [[ -L $fvm ]]; then
+    if [[ ${fvm:A} == (#b)*/versions/([^/]##)/bin/flutter ]]; then
+      _p9k_prompt_segment prompt_fvm blue $_p9k_color1 FLUTTER_ICON 0 '' ${match[1]//\%/%%}
+      return 0
+    fi
   fi
   return 1
 }
 
 function _p9k_fvm_new() {
-  _p9k_upglob .fvm @ && return 1
+  _p9k_upglob .fvm && return 1
   local sdk=$_p9k__parent_dirs[$?]/.fvm/flutter_sdk
-  if [[ ${sdk:A} == (#b)*/versions/([^/]##) ]]; then
-    _p9k_prompt_segment prompt_fvm blue $_p9k_color1 FLUTTER_ICON 0 '' ${match[1]//\%/%%}
-    return 0
+  if [[ -L $sdk ]]; then
+    if [[ ${sdk:A} == (#b)*/versions/([^/]##) ]]; then
+      _p9k_prompt_segment prompt_fvm blue $_p9k_color1 FLUTTER_ICON 0 '' ${match[1]//\%/%%}
+      return 0
+    fi
   fi
   return 1
 }
@@ -1345,7 +1349,7 @@ _p9k_prompt_battery_init() {
     return
   fi
   if [[ $_p9k_os != (Linux|Android) ||
-        -z /sys/class/power_supply/(CMB*|BAT*|*battery)/(energy_full|charge_full|charge_counter)(#qN) ]]; then
+        -z /sys/class/power_supply/(CMB*|BAT*|battery)/(energy_full|charge_full|charge_counter)(#qN) ]]; then
     typeset -g "_p9k__segment_cond_${_p9k__prompt_side}[_p9k__segment_index]"='${:-}'
   fi
 }
@@ -1403,7 +1407,7 @@ _p9k_prompt_battery_set_args() {
 
     Linux|Android)
       # See https://sourceforge.net/projects/acpiclient.
-      local -a bats=( /sys/class/power_supply/(CMB*|BAT*|*battery)/(FN) )
+      local -a bats=( /sys/class/power_supply/(CMB*|BAT*|battery)/(FN) )
       (( $#bats )) || return
 
       local -i energy_now energy_full power_now
@@ -2192,7 +2196,7 @@ prompt_go_version() {
       fi
     fi
     if [[ $_p9k__cwd/ != $p/* && $_p9k__cwd_a/ != $p/* ]]; then
-      _p9k_upglob go.mod -. && return
+      _p9k_upglob go.mod && return
     fi
   fi
   _p9k_prompt_segment "$0" "green" "grey93" "GO_ICON" 0 '' "${v//\%/%%}"
@@ -2212,7 +2216,7 @@ prompt_history() {
 
 prompt_package() {
   unset P9K_PACKAGE_NAME P9K_PACKAGE_VERSION
-  _p9k_upglob package.json -. && return
+  _p9k_upglob package.json && return
 
   local file=$_p9k__parent_dirs[$?]/package.json
   if ! _p9k_cache_stat_get $0 $file; then
@@ -2317,7 +2321,6 @@ _p9k_vpn_ip_render() {
 ################################################################
 # Segment to display laravel version
 prompt_laravel_version() {
-  # TODO: add a '-/' or '-.' here depending on whether artisan is a directory or a file.
   _p9k_upglob artisan && return
   local dir=$_p9k__parent_dirs[$?]
   local app=$dir/vendor/laravel/framework/src/Illuminate/Foundation/Application.php
@@ -2429,7 +2432,7 @@ function _p9k_cached_cmd() {
 ################################################################
 # Segment to diplay Node version
 prompt_node_version() {
-  _p9k_upglob package.json -.
+  _p9k_upglob package.json
   local -i idx=$?
   if (( idx )); then
     _p9k_cached_cmd 0 $_p9k__parent_dirs[idx]/package.json node --version || return
@@ -2609,7 +2612,7 @@ prompt_nodenv() {
       fi
     fi
     if [[ -z $_p9k__ret ]]; then
-      _p9k_upglob .node-version -.
+      _p9k_upglob .node-version
       local -i idx=$?
       if (( idx )) && _p9k_read_word $_p9k__parent_dirs[idx]/.node-version; then
         (( ${_POWERLEVEL9K_NODENV_SOURCES[(I)local]} )) || return
@@ -2645,12 +2648,9 @@ _p9k_prompt_nodenv_init() {
 
 prompt_dotnet_version() {
   if (( _POWERLEVEL9K_DOTNET_VERSION_PROJECT_ONLY )); then
-    _p9k_upglob 'project.json|global.json|packet.dependencies|*.csproj|*.fsproj|*.xproj|*.sln' -. && return
+    _p9k_upglob 'project.json|global.json|packet.dependencies|*.csproj|*.fsproj|*.xproj|*.sln' && return
   fi
-
-  local cfg
-  _p9k_upglob global.json -. || cfg=$_p9k__parent_dirs[$?]/global.json
-  _p9k_cached_cmd 0 "$cfg" dotnet --version || return
+  _p9k_cached_cmd 0 '' dotnet --version || return
   _p9k_prompt_segment "$0" "magenta" "white" 'DOTNET_ICON' 0 '' "$_p9k__ret"
 }
 
@@ -2672,7 +2672,7 @@ instant_prompt_os_icon() { prompt_os_icon; }
 # Segment to display PHP version number
 prompt_php_version() {
   if (( _POWERLEVEL9K_PHP_VERSION_PROJECT_ONLY )); then
-    _p9k_upglob 'composer.json|*.php' -. && return
+    _p9k_upglob 'composer.json|*.php' && return
   fi
   _p9k_cached_cmd 0 '' php --version || return
   [[ $_p9k__ret == (#b)(*$'\n')#'PHP '([[:digit:].]##)* ]] || return
@@ -2779,7 +2779,7 @@ prompt_rbenv() {
       fi
     fi
     if [[ -z $_p9k__ret ]]; then
-      _p9k_upglob .ruby-version -.
+      _p9k_upglob .ruby-version
       local -i idx=$?
       if (( idx )) && _p9k_read_word $_p9k__parent_dirs[idx]/.ruby-version; then
         (( ${_POWERLEVEL9K_RBENV_SOURCES[(I)local]} )) || return
@@ -2842,7 +2842,7 @@ prompt_scalaenv() {
       fi
     fi
     if [[ -z $_p9k__ret ]]; then
-      _p9k_upglob .scala-version -.
+      _p9k_upglob .scala-version
       local -i idx=$?
       if (( idx )) && _p9k_read_word $_p9k__parent_dirs[idx]/.scala-version; then
         (( ${_POWERLEVEL9K_SCALAENV_SOURCES[(I)local]} )) || return
@@ -2900,7 +2900,7 @@ prompt_phpenv() {
       fi
     fi
     if [[ -z $_p9k__ret ]]; then
-      _p9k_upglob .php-version -.
+      _p9k_upglob .php-version
       local -i idx=$?
       if (( idx )) && _p9k_read_word $_p9k__parent_dirs[idx]/.php-version; then
         (( ${_POWERLEVEL9K_PHPENV_SOURCES[(I)local]} )) || return
@@ -2961,7 +2961,7 @@ prompt_luaenv() {
       fi
     fi
     if [[ -z $_p9k__ret ]]; then
-      _p9k_upglob .lua-version -.
+      _p9k_upglob .lua-version
       local -i idx=$?
       if (( idx )) && _p9k_read_word $_p9k__parent_dirs[idx]/.lua-version; then
         (( ${_POWERLEVEL9K_LUAENV_SOURCES[(I)local]} )) || return
@@ -3022,7 +3022,7 @@ prompt_jenv() {
       fi
     fi
     if [[ -z $_p9k__ret ]]; then
-      _p9k_upglob .java-version -.
+      _p9k_upglob .java-version
       local -i idx=$?
       if (( idx )) && _p9k_read_word $_p9k__parent_dirs[idx]/.java-version; then
         (( ${_POWERLEVEL9K_JENV_SOURCES[(I)local]} )) || return
@@ -3083,7 +3083,7 @@ prompt_plenv() {
       fi
     fi
     if [[ -z $_p9k__ret ]]; then
-      _p9k_upglob .perl-version -.
+      _p9k_upglob .perl-version
       local -i idx=$?
       if (( idx )) && _p9k_read_word $_p9k__parent_dirs[idx]/.perl-version; then
         (( ${_POWERLEVEL9K_PLENV_SOURCES[(I)local]} )) || return
@@ -3116,30 +3116,12 @@ _p9k_prompt_plenv_init() {
 }
 
 ################################################################
-# Segment to display perlbrew information
-# https://github.com/gugod/App-perlbrew
-
-prompt_perlbrew() {
-  if (( _POWERLEVEL9K_PERLBREW_PROJECT_ONLY )); then
-    _p9k_upglob 'cpanfile|.perltidyrc|(|MY)META.(yml|json)|(Makefile|Build).PL|*.(pl|pm|t|pod)' -. && return
-  fi
-
-  local v=$PERLBREW_PERL
-  (( _POWERLEVEL9K_PERLBREW_SHOW_PREFIX )) || v=${v#*-}
-  [[ -n $v ]] || return
-  _p9k_prompt_segment "$0" "blue" "$_p9k_color1" 'PERL_ICON' 0 '' "${v//\%/%%}"
-}
-
-_p9k_prompt_perlbrew_init() {
-  typeset -g "_p9k__segment_cond_${_p9k__prompt_side}[_p9k__segment_index]"='$PERLBREW_PERL'
-}
-
-################################################################
 # Segment to display chruby information
 # see https://github.com/postmodern/chruby/issues/245 for chruby_auto issue with ZSH
 prompt_chruby() {
-  local v=${(M)RUBY_ENGINE:#$~_POWERLEVEL9K_CHRUBY_SHOW_ENGINE_PATTERN}
-  [[ $_POWERLEVEL9K_CHRUBY_SHOW_VERSION == 1 && -n $RUBY_VERSION ]] && v+=${v:+ }$RUBY_VERSION
+  local v
+  (( _POWERLEVEL9K_CHRUBY_SHOW_ENGINE )) && v=$RUBY_ENGINE
+  if [[ $_POWERLEVEL9K_CHRUBY_SHOW_VERSION == 1 && -n $RUBY_VERSION ]] && v+=${v:+ }$RUBY_VERSION
   _p9k_prompt_segment "$0" "red" "$_p9k_color1" 'RUBY_ICON' 0 '' "${v//\%/%%}"
 }
 
@@ -3162,7 +3144,7 @@ instant_prompt_root_indicator() { prompt_root_indicator; }
 prompt_rust_version() {
   unset P9K_RUST_VERSION
   if (( _POWERLEVEL9K_RUST_VERSION_PROJECT_ONLY )); then
-    _p9k_upglob Cargo.toml -. && return
+    _p9k_upglob Cargo.toml && return
   fi
   local rustc=$commands[rustc] toolchain deps=()
   if (( $+commands[ldd] )); then
@@ -3195,7 +3177,7 @@ prompt_rust_version() {
         fi
       fi
       local -A overrides=($_p9k__cache_val)
-      _p9k_upglob rust-toolchain -.
+      _p9k_upglob rust-toolchain
       local dir=$_p9k__parent_dirs[$?]
       local -i n m=${dir[(I)/]}
       local pair
@@ -4318,7 +4300,7 @@ function _p9k_pyenv_compute() {
       fi
     fi
     if [[ -z $_p9k__ret ]]; then
-      _p9k_upglob .python-version -.
+      _p9k_upglob .python-version
       local -i idx=$?
       if (( idx )) && _p9k_read_pyenv_like_version_file $_p9k__parent_dirs[idx]/.python-version python-; then
         (( ${_POWERLEVEL9K_PYENV_SOURCES[(I)local]} )) || return
@@ -4398,7 +4380,7 @@ prompt_goenv() {
       fi
     fi
     if [[ -z $_p9k__ret ]]; then
-      _p9k_upglob .go-version -.
+      _p9k_upglob .go-version
       local -i idx=$?
       if (( idx )) && _p9k_read_pyenv_like_version_file $_p9k__parent_dirs[idx]/.go-version go-; then
         (( ${_POWERLEVEL9K_GOENV_SOURCES[(I)local]} )) || return
@@ -4482,7 +4464,7 @@ prompt_kubecontext() {
       {
         (( pos <= $#cfg )) || return
         shift $pos cfg
-        pos=${cfg[(i)  name: ${(b)name}]}
+        pos=${cfg[(i)  name: $name]}
         (( pos <= $#cfg )) || return
         (( --pos ))
         for ((; pos > 0; --pos)); do
@@ -4517,7 +4499,7 @@ prompt_kubecontext() {
           text=$cloud_cluster
         fi
       # arn:aws:eks:us-east-1:123456789012:cluster/cluster-01
-      elif [[ $cluster == (#b)arn:aws[[:alnum:]-]#:eks:([[:alnum:]-]##):([[:digit:]]##):cluster/(?*) ]]; then
+      elif [[ $cluster == (#b)arn:aws:eks:([[:alnum:]-]##):([[:digit:]]##):cluster/(?*) ]]; then
         cloud_name=eks
         cloud_zone=$match[1]
         cloud_account=$match[2]
@@ -4583,7 +4565,7 @@ _p9k_prompt_dropbox_init() {
 # print Java version number
 prompt_java_version() {
   if (( _POWERLEVEL9K_JAVA_VERSION_PROJECT_ONLY )); then
-    _p9k_upglob 'pom.xml|build.gradle.kts|build.sbt|deps.edn|project.clj|build.boot|*.(java|class|jar|gradle|clj|cljc)' -. && return
+    _p9k_upglob 'pom.xml|build.gradle.kts|build.sbt|deps.edn|project.clj|build.boot|*.(java|class|jar|gradle|clj|cljc)' && return
   fi
 
   local java=$commands[java]
@@ -4646,9 +4628,9 @@ _p9k_gcloud_prefetch() {
   # P9K_GCLOUD_PROJECT is deprecated; it's always equal to P9K_GCLOUD_PROJECT_ID
   unset P9K_GCLOUD_CONFIGURATION P9K_GCLOUD_ACCOUNT P9K_GCLOUD_PROJECT P9K_GCLOUD_PROJECT_ID P9K_GCLOUD_PROJECT_NAME
   (( $+commands[gcloud] )) || return
-  _p9k_read_word ${CLOUDSDK_CONFIG:-~/.config/gcloud}/active_config || return
+  _p9k_read_word ~/.config/gcloud/active_config || return
   P9K_GCLOUD_CONFIGURATION=$_p9k__ret
-  if ! _p9k_cache_stat_get $0 ${CLOUDSDK_CONFIG:-~/.config/gcloud}/configurations/config_$P9K_GCLOUD_CONFIGURATION; then
+  if ! _p9k_cache_stat_get $0 ~/.config/gcloud/configurations/config_$P9K_GCLOUD_CONFIGURATION; then
     local pair account project_id
     pair="$(gcloud config configurations describe $P9K_GCLOUD_CONFIGURATION \
       --format=$'value[separator="\1"](properties.core.account,properties.core.project)')"
@@ -4918,18 +4900,6 @@ function instant_prompt_nnn() {
   _p9k_prompt_segment prompt_nnn 6 $_p9k_color1 NNN_ICON 1 '${NNNLVL:#0}' '$NNNLVL'
 }
 
-function prompt_lf() {
-  _p9k_prompt_segment $0 6 $_p9k_color1 LF_ICON 0 '' $LF_LEVEL
-}
-
-_p9k_prompt_lf_init() {
-  typeset -g "_p9k__segment_cond_${_p9k__prompt_side}[_p9k__segment_index]"='${LF_LEVEL:#0}'
-}
-
-function instant_prompt_lf() {
-  _p9k_prompt_segment prompt_lf 6 $_p9k_color1 LF_ICON 1 '${LF_LEVEL:#0}' '$LF_LEVEL'
-}
-
 function prompt_xplr() {
   local -i len=$#_p9k__prompt _p9k__has_upglob
   _p9k_prompt_segment $0 6 $_p9k_color1 XPLR_ICON 0 '' ''
@@ -5018,18 +4988,18 @@ _p9k_prompt_proxy_init() {
 
 function prompt_direnv() {
   local -i len=$#_p9k__prompt _p9k__has_upglob
-  _p9k_prompt_segment $0 $_p9k_color1 yellow DIRENV_ICON 0 '${DIRENV_DIR-}' ''
+  _p9k_prompt_segment $0 $_p9k_color1 yellow DIRENV_ICON 0 '$DIRENV_DIR' ''
   (( _p9k__has_upglob )) || typeset -g "_p9k__segment_val_${_p9k__prompt_side}[_p9k__segment_index]"=$_p9k__prompt[len+1,-1]
 }
 
 _p9k_prompt_direnv_init() {
   # DIRENV_DIR is set in a precmd hook. If our hook isn't the last, DIRENV_DIR might
   # still get set before prompt is expanded.
-  typeset -g "_p9k__segment_cond_${_p9k__prompt_side}[_p9k__segment_index]"='${DIRENV_DIR-${precmd_functions[-1]:#_p9k_precmd}}'
+  typeset -g "_p9k__segment_cond_${_p9k__prompt_side}[_p9k__segment_index]"='${DIRENV_DIR:-${precmd_functions[-1]:#_p9k_precmd}}'
 }
 
 function instant_prompt_direnv() {
-  if [[ -n ${DIRENV_DIR:-} && $precmd_functions[-1] == _p9k_precmd ]]; then
+  if [[ -n $DIRENV_DIR && $precmd_functions[-1] == _p9k_precmd ]]; then
     _p9k_prompt_segment prompt_direnv $_p9k_color1 yellow DIRENV_ICON 0 '' ''
   fi
 }
@@ -5628,7 +5598,7 @@ prompt_haskell_stack() {
     _p9k_haskell_stack_version $STACK_YAML
   else
     (( ${_POWERLEVEL9K_HASKELL_STACK_SOURCES[(I)local|global]} )) || return
-    if _p9k_upglob stack.yaml -.; then
+    if _p9k_upglob stack.yaml; then
       (( _POWERLEVEL9K_HASKELL_STACK_PROMPT_ALWAYS_SHOW )) || return
       (( ${_POWERLEVEL9K_HASKELL_STACK_SOURCES[(I)global]} )) || return
       _p9k_haskell_stack_version ${STACK_ROOT:-~/.stack}/global-project/stack.yaml
@@ -5653,39 +5623,6 @@ prompt_haskell_stack() {
 
 _p9k_prompt_haskell_stack_init() {
   typeset -g "_p9k__segment_cond_${_p9k__prompt_side}[_p9k__segment_index]"='$commands[stack]'
-}
-
-################################################################
-# CPU Architecture
-prompt_cpu_arch() {
-  local -i len=$#_p9k__prompt _p9k__has_upglob
-
-  local state text
-  if _p9k_cache_ephemeral_get $0; then
-    state=$_p9k__cache_val[1]
-    text=$_p9k__cache_val[2]
-  else
-    local cmd
-    for cmd in machine arch; do
-      (( $+commands[$cmd] )) || continue
-      if text=$(command -- $cmd) 2>/dev/null && [[ $text == [a-zA-Z][a-zA-Z0-9_]# ]]; then
-        break
-      else
-        text=
-      fi
-    done
-    state=_${${(U)text}//İ/I}
-    _p9k_cache_ephemeral_set "$state" "$text"
-  fi
-  if [[ -n $text ]]; then
-    _p9k_prompt_segment "$0$state" "yellow" "$_p9k_color1" 'ARCH_ICON' 0 '' "$text"
-  fi
-
-  (( _p9k__has_upglob )) || typeset -g "_p9k__segment_val_${_p9k__prompt_side}[_p9k__segment_index]"=$_p9k__prompt[len+1,-1]
-}
-
-_p9k_prompt_cpu_arch_init() {
-  typeset -g "_p9k__segment_cond_${_p9k__prompt_side}[_p9k__segment_index]"='$commands[machine]$commands[arch]'
 }
 
 # Use two preexec hooks to survive https://github.com/MichaelAquilina/zsh-you-should-use with
@@ -5741,19 +5678,19 @@ function _p9k_prompt_net_iface_async() {
   # netstat -inbI en0
   local iface ip line var
   typeset -a iface2ip ips ifaces
-  if (( $+commands[ip] )) && [[ $+commands[ifconfig] == 0 || $OSTYPE == linux* ]]; then
-    for line in ${(f)"$(command ip -4 a show 2>/dev/null)"}; do
-      if [[ $line == (#b)<->:[[:space:]]##([^:]##):[[:space:]]##\<([^\>]#)\>* ]]; then
-        [[ ,$match[2], == *,UP,* ]] && iface=$match[1] || iface=
+  if (( $+commands[ifconfig] )); then
+    for line in ${(f)"$(command ifconfig 2>/dev/null)"}; do
+      if [[ $line == (#b)([^[:space:]]##):[[:space:]]##flags=([[:xdigit:]]##)'<'* ]]; then
+        [[ $match[2] == *[13579bdfBDF] ]] && iface=$match[1] || iface=
       elif [[ -n $iface && $line == (#b)[[:space:]]##inet[[:space:]]##([0-9.]##)* ]]; then
         iface2ip+=($iface $match[1])
         iface=
       fi
     done
-  elif (( $+commands[ifconfig] )); then
-    for line in ${(f)"$(command ifconfig 2>/dev/null)"}; do
-      if [[ $line == (#b)([^[:space:]]##):[[:space:]]##flags=([[:xdigit:]]##)'<'* ]]; then
-        [[ $match[2] == *[13579bdfBDF] ]] && iface=$match[1] || iface=
+  elif (( $+commands[ip] )); then
+    for line in ${(f)"$(command ip -4 a show 2>/dev/null)"}; do
+      if [[ $line == (#b)<->:[[:space:]]##([^:]##):[[:space:]]##\<([^\>]#)\>* ]]; then
+        [[ ,$match[2], == *,UP,* ]] && iface=$match[1] || iface=
       elif [[ -n $iface && $line == (#b)[[:space:]]##inet[[:space:]]##([0-9.]##)* ]]; then
         iface2ip+=($iface $match[1])
         iface=
@@ -6043,7 +5980,7 @@ _p9k_set_instant_prompt() {
   [[ -n $RPROMPT ]] || unset RPROMPT
 }
 
-typeset -gri __p9k_instant_prompt_version=47
+typeset -gri __p9k_instant_prompt_version=45
 
 _p9k_dump_instant_prompt() {
   local user=${(%):-%n}
@@ -6077,7 +6014,7 @@ _p9k_dump_instant_prompt() {
   typeset -gi __p9k_instant_prompt_disabled=1
   [[ \$ZSH_VERSION == ${(q)ZSH_VERSION} && \$ZSH_PATCHLEVEL == ${(q)ZSH_PATCHLEVEL} &&
      $screen \${(M)TERM:#(screen*|tmux*)} &&
-     \${#\${(M)VTE_VERSION:#(<1-4602>|4801)}} == "${#${(M)VTE_VERSION:#(<1-4602>|4801)}}" &&
+     \${#\${(M)VTE_VERSION:#(<1-4602>|4801)}} == ${#${(M)VTE_VERSION:#(<1-4602>|4801)}} &&
      \$POWERLEVEL9K_DISABLE_INSTANT_PROMPT != 'true' &&
      \$POWERLEVEL9K_INSTANT_PROMPT != 'off' ]] || return
   typeset -g __p9k_instant_prompt_param_sig=${(q+)_p9k__param_sig}
@@ -6579,9 +6516,7 @@ function _p9k_clear_instant_prompt() {
         unset _z4h_saved_screen
       fi
       print -rn -- $terminfo[rc]${(%):-%b%k%f%s%u}$terminfo[ed]
-      local unexpected=${(S)${${content//$'\e[?'<->'c'}//$'\e['<->' q'}//$'\e'[^$'\a\e']#($'\a'|$'\e\\')}
-      # Visual Studio Code prints this garbage.
-      unexpected=${${unexpected//$'\033[1;32mShell integration activated\033[0m\n'}//$'\r'}
+      local unexpected=${${${(S)content//$'\e[?'<->'c'}//$'\e['<->' q'}//$'\e'[^$'\a\e']#($'\a'|$'\e\\')}
       if [[ -n $unexpected ]]; then
         local omz1='[Oh My Zsh] Would you like to update? [Y/n]: '
         local omz2='Updating Oh My Zsh'
@@ -7043,7 +6978,7 @@ function _p9k_reset_prompt() {
       zle .reset-prompt
       (( ${+functions[z4h]} )) || zle -R
     } always {
-      (( _p9k__can_hide_cursor )) && print -rn -- $_p9k__cnorm
+      (( _p9k__can_hide_cursor )) && echoti cnorm
       _p9k__cursor_hidden=0
     }
   fi
@@ -7055,14 +6990,14 @@ function _p9k_reset_prompt() {
 # ZSH_PATCHLEVEL=zsh-5.4.2-159-gd8d9fee13. Released in 5.5.
 #
 # Fix: https://github.com/zsh-users/zsh/commit/64d13738357c9b9c212adbe17f271716abbcf6ea.
-# ZSH_PATCHLEVEL=zsh-5.7.1-50-g64d137383. Released in 5.7.2.
+# ZSH_PATCHLEVEL=zsh-5.7.1-50-g64d137383.
 #
 # Test: PROMPT="${(pl:$((COLUMNS))::-:)}<%1(l.%2(l.FAIL.PASS).FAIL)> " zsh -dfis <<<exit
 # Workaround: PROMPT="${(pl:$((COLUMNS))::-:)}%{%G%}<%1(l.%2(l.FAIL.PASS).FAIL)> " zsh -dfis <<<exit
 function _p9k_prompt_overflow_bug() {
   [[ $ZSH_PATCHLEVEL =~ '^zsh-5\.4\.2-([0-9]+)-' ]] && return $(( match[1] < 159 ))
   [[ $ZSH_PATCHLEVEL =~ '^zsh-5\.7\.1-([0-9]+)-' ]] && return $(( match[1] >= 50 ))
-  [[ $ZSH_VERSION == 5.<5-7>* && $ZSH_VERSION != 5.7.<2->* ]]
+  is-at-least 5.5 && ! is-at-least 5.7.2
 }
 
 typeset -g  _p9k__param_pat
@@ -7165,14 +7100,6 @@ _p9k_init_vars() {
   typeset -gi _p9k__restore_prompt_fd
   typeset -gi _p9k__redraw_fd
   typeset -gi _p9k__can_hide_cursor=$(( $+terminfo[civis] && $+terminfo[cnorm] ))
-  if (( _p9k__can_hide_cursor )); then
-    # See https://github.com/romkatv/powerlevel10k/issues/1699
-    if [[ $terminfo[cnorm] == *$'\e[?25h'(|'\e'*) ]]; then
-      typeset -g _p9k__cnorm=$'\e[?25h'
-    else
-      typeset -g _p9k__cnorm=$terminfo[cnorm]
-    fi
-  fi
   typeset -gi _p9k__cursor_hidden
   typeset -gi _p9k__non_hermetic_expansion
   typeset -g  _p9k__time
@@ -7487,7 +7414,7 @@ _p9k_init_params() {
   _p9k_declare -s POWERLEVEL9K_IP_INTERFACE ""
   : ${_POWERLEVEL9K_IP_INTERFACE:='.*'}
   _p9k_segment_in_use ip || _POWERLEVEL9K_IP_INTERFACE=
-  _p9k_declare -s POWERLEVEL9K_VPN_IP_INTERFACE "(gpd|wg|(.*tun)|tailscale)[0-9]*|(zt.*)"
+  _p9k_declare -s POWERLEVEL9K_VPN_IP_INTERFACE "(gpd|wg|(.*tun)|tailscale)[0-9]*)|(zt.*)"
   : ${_POWERLEVEL9K_VPN_IP_INTERFACE:='.*'}
   _p9k_segment_in_use vpn_ip || _POWERLEVEL9K_VPN_IP_INTERFACE=
   _p9k_declare -b POWERLEVEL9K_VPN_IP_SHOW_ALL 0
@@ -7504,8 +7431,6 @@ _p9k_init_params() {
   _p9k_declare -b POWERLEVEL9K_DOTNET_VERSION_PROJECT_ONLY 1
   _p9k_declare -b POWERLEVEL9K_GO_VERSION_PROJECT_ONLY 1
   _p9k_declare -b POWERLEVEL9K_RUST_VERSION_PROJECT_ONLY 1
-  _p9k_declare -b POWERLEVEL9K_PERLBREW_PROJECT_ONLY 1
-  _p9k_declare -b POWERLEVEL9K_PERLBREW_SHOW_PREFIX 0
   _p9k_declare -b POWERLEVEL9K_JAVA_VERSION_PROJECT_ONLY 0
   _p9k_declare -b POWERLEVEL9K_NODENV_PROMPT_ALWAYS_SHOW 0
   _p9k_declare -a POWERLEVEL9K_NODENV_SOURCES -- shell local global
@@ -7553,10 +7478,6 @@ _p9k_init_params() {
   _p9k_declare -b POWERLEVEL9K_RVM_SHOW_PREFIX 0
   _p9k_declare -b POWERLEVEL9K_CHRUBY_SHOW_VERSION 1
   _p9k_declare -b POWERLEVEL9K_CHRUBY_SHOW_ENGINE 1
-  _p9k_declare -s POWERLEVEL9K_CHRUBY_SHOW_ENGINE_PATTERN
-  if (( _POWERLEVEL9K_CHRUBY_SHOW_ENGINE )); then
-    : ${_POWERLEVEL9K_CHRUBY_SHOW_ENGINE_PATTERN=*}
-  fi
   _p9k_declare -b POWERLEVEL9K_STATUS_CROSS 0
   _p9k_declare -b POWERLEVEL9K_STATUS_OK 1
   _p9k_declare -b POWERLEVEL9K_STATUS_OK_PIPE 1
@@ -7693,7 +7614,7 @@ function _p9k_on_widget_zle-keymap-select() { _p9k_check_visual_mode; __p9k_rese
 function _p9k_on_widget_overwrite-mode()    { _p9k_check_visual_mode; __p9k_reset_state=2; }
 function _p9k_on_widget_vi-replace()        { _p9k_check_visual_mode; __p9k_reset_state=2; }
 
-if [[ $ZSH_VERSION == (5.<3->*|<6->.*) ]]; then
+if is-at-least 5.3; then
   function _p9k_check_visual_mode() {
     [[ ${KEYMAP:-} == vicmd ]] || return 0
     local region=${${REGION_ACTIVE:-0}/2/1}
@@ -7712,7 +7633,7 @@ function _p9k_on_widget_deactivate-region() { _p9k_check_visual_mode; }
 function _p9k_on_widget_zle-line-init() {
   (( _p9k__cursor_hidden )) || return 0
   _p9k__cursor_hidden=0
-  print -rn -- $_p9k__cnorm
+  echoti cnorm
 }
 
 function _p9k_on_widget_zle-line-finish() {
@@ -7870,7 +7791,7 @@ function _p9k_wrap_widgets() {
 
   typeset -gir __p9k_widgets_wrapped=1
   local -a widget_list
-  if [[ $ZSH_VERSION == (5.<3->*|<6->.*) ]]; then
+  if is-at-least 5.3; then
     local -aU widget_list=(
       zle-line-pre-redraw
       zle-line-init
@@ -8216,7 +8137,7 @@ _p9k_init_prompt() {
        _p9k_all_params_eq '_POWERLEVEL9K_*WHITESPACE_BETWEEN_RIGHT_SEGMENTS' ' ' &&
        _p9k_all_params_eq '_POWERLEVEL9K_*RIGHT_RIGHT_WHITESPACE' ' ' &&
        _p9k_all_params_eq '_POWERLEVEL9K_*RIGHT_PROMPT_LAST_SEGMENT_END_SYMBOL' '' &&
-       [[ $ZSH_VERSION != (5.7.<2->*|5.<8->*|<6->.*) ]]; then
+       ! is-at-least 5.7.2; then
     _p9k_emulate_zero_rprompt_indent=1
     _p9k_prompt_prefix_left+='${${:-${_p9k__real_zle_rprompt_indent:=$ZLE_RPROMPT_INDENT}${ZLE_RPROMPT_INDENT::=1}${_p9k__ind::=0}}+}'
     _p9k_line_suffix_right[-1]='${_p9k__sss:+${_p9k__sss% }%E}}'
@@ -8307,9 +8228,8 @@ _p9k_init_ssh() {
   #
   # License: https://github.com/sindresorhus/pure/blob/e8abf9d37185ec9b7b4398ca9c5eba555a1028eb/license.
 
-  [[ -n $P9K_SSH && $_P9K_SSH_TTY == $TTY ]] && return
+  [[ -n $P9K_SSH ]] && return
   typeset -gix P9K_SSH=0
-  typeset -gx _P9K_SSH_TTY=$TTY
   if [[ -n $SSH_CLIENT || -n $SSH_TTY || -n $SSH_CONNECTION ]]; then
     P9K_SSH=1
     return 0
@@ -8337,10 +8257,9 @@ _p9k_init_toolbox() {
     local name=(${(Q)${${(@M)${(f)"$(</run/.containerenv)"}:#name=*}#name=}})
     [[ ${#name} -eq 1 && -n ${name[1]} ]] || return 0
     typeset -g P9K_TOOLBOX_NAME=${name[1]}
-  elif [[ -n $DISTROBOX_ENTER_PATH ]]; then
+  elif [[ -n $DISTROBOX_ENTER_PATH && -n $NAME ]]; then
     local name=${(%):-%m}
-    # $NAME can be empty, see https://github.com/romkatv/powerlevel10k/pull/1916.
-    if [[ -n $name && $name == $NAME* ]]; then
+    if [[ $name == $NAME* ]]; then
       typeset -g P9K_TOOLBOX_NAME=$name
     fi
   fi
@@ -8355,7 +8274,7 @@ _p9k_must_init() {
     [[ $sig == $_p9k__param_sig ]] && return 1
     _p9k_deinit
   fi
-  _p9k__param_pat=$'v141\1'${(q)ZSH_VERSION}$'\1'${(q)ZSH_PATCHLEVEL}$'\1'
+  _p9k__param_pat=$'v134\1'${(q)ZSH_VERSION}$'\1'${(q)ZSH_PATCHLEVEL}$'\1'
   _p9k__param_pat+=$__p9k_force_term_shell_integration$'\1'
   _p9k__param_pat+=$'${#parameters[(I)POWERLEVEL9K_*]}\1${(%):-%n%#}\1$GITSTATUS_LOG_LEVEL\1'
   _p9k__param_pat+=$'$GITSTATUS_ENABLE_LOGGING\1$GITSTATUS_DAEMON\1$GITSTATUS_NUM_THREADS\1'
@@ -8879,7 +8798,7 @@ _p9k_deinit() {
   fi
   (( $+_p9k__iterm2_precmd )) && functions[iterm2_precmd]=$_p9k__iterm2_precmd
   (( $+_p9k__iterm2_decorate_prompt )) && functions[iterm2_decorate_prompt]=$_p9k__iterm2_decorate_prompt
-  unset -m '(_POWERLEVEL9K_|P9K_|_p9k_)*~(P9K_SSH|_P9K_SSH_TTY|P9K_TOOLBOX_NAME|P9K_TTY|_P9K_TTY)'
+  unset -m '(_POWERLEVEL9K_|P9K_|_p9k_)*~(P9K_SSH|P9K_TOOLBOX_NAME|P9K_TTY|_P9K_TTY)'
   [[ -n $__p9k_locale ]] || unset __p9k_locale
 }
 
@@ -8888,7 +8807,7 @@ typeset -gi __p9k_configured=0
 typeset -gri __p9k_instant_prompt_disabled=1
 
 # `typeset -g` doesn't roundtrip in zsh prior to 5.4.
-if [[ $ZSH_VERSION == (5.<4->*|<6->.*) ]]; then
+if is-at-least 5.4; then
   typeset -gri __p9k_dumps_enabled=1
 else
   typeset -gri __p9k_dumps_enabled=0
@@ -9299,8 +9218,6 @@ if [[ $__p9k_dump_file != $__p9k_instant_prompt_dump_file && -n $__p9k_instant_p
   zf_rm -f -- $__p9k_dump_file{,.zwc} 2>/dev/null
   zf_rm -f -- $__p9k_instant_prompt_dump_file{,.zwc} 2>/dev/null
 fi
-
-unset VSCODE_SHELL_INTEGRATION
 
 _p9k_init_ssh
 _p9k_init_toolbox
