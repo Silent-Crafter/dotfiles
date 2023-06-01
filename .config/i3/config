@@ -57,7 +57,7 @@ exec --no-startup-id kitty --class dropterm
 exec --no-startup-id kitty --class ncmpcpp -e ncmpcpp
 exec --no-startup-id kitty --class lf -e lf
 exec --no-startup-id kitty --class cava --config /home/silentcrafter/.config/kitty/cava.conf
-exec --no-startup-id surf -z 0.5
+#exec --no-startup-id surf -z 0.5
 
 exec --no-startup-id /home/silentcrafter/.config/polybar/forest/launch.sh
 
@@ -270,7 +270,8 @@ for_window [instance="surf"]		resize set 800 600
 for_window [instance="surf"]		move position center
 for_window [instance="surf"]		move scratchpad
 
-for_window [instance="ncmpcpp"]		floating enable
+#for_window [instance="Steam"]		floating enable
+
 bindsym $mod+t                          [class="dropterm"] scratchpad show
 #; move position center
 bindsym $mod+n                          [class="ncmpcpp"] scratchpad show

@@ -100,10 +100,9 @@ cmd zip ${{
 }}
 
 set info size:time
-set hidden True
-
+set hidden true
 
 set icons
 set drawbox
-set previewer /home/silentcrafter/.config/lf/lf_kitty_preview
-set cleaner /home/silentcrafter/.config/lf/lf_kitty_clean
+set previewer ~/.config/lf/lf_kitty_preview
+set cleaner ~/.config/lf/lf_kitty_clean

@@ -59,6 +59,4 @@ alias wget=wget --hsts-file="$XDG_DATA_HOME/wget-hsts"
 alias git-clone='git clone https://github.com/'
 alias lsblk='lsblk -o NAME,MAJ:MIN,RM,SIZE,RO,TYPE,FSTYPE,MOUNTPOINTS'
 #alias rm='trash -v'
-alias docker='sudo docker'
-alias reboot='loginctl reboot'
-alias poweroff='loginctl poweroff'
+#alias docker='sudo docker'

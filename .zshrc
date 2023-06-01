@@ -99,4 +99,17 @@ if test -n "$KITTY_INSTALLATION_DIR"; then
     kitty-integration
     unfunction kitty-integration
 fi
-cd
+# >>> conda initialize >>>
+# # !! Contents within this block are managed by 'conda init' !!
+#__conda_setup="$('/home/silentcrafter/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+#if [ $? -eq 0  ]; then
+#    eval "$__conda_setup"
+#else
+#    if [ -f "/home/silentcrafter/anaconda3/etc/profile.d/conda.sh"  ]; then
+#	. "/home/silentcrafter/anaconda3/etc/profile.d/conda.sh"
+#    else
+#	export PATH="/home/silentcrafter/anaconda3/bin:$PATH"
+#    fi
+#fi
+#unset __conda_setup
+# <<< conda initialize <<<
