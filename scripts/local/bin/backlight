@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# Script executed by the backlight.service
-
-echo Started
-/sbin/chmod a+rw /sys/class/backlight/*/brightness
-echo Finished

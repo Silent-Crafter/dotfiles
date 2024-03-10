@@ -15,4 +15,4 @@ export LESS_TERMCAP_so=$'\e[01;44;33m'
 export LESS_TERMCAP_ue=$'\e[0m'
 export LESS_TERMCAP_us=$'\e[01;32m'
 
-export PATH="$HOME/.local/bin:/opt/pycharm/bin:$PATH"
+export PATH="$HOME/.local/bin:/opt/clion/bin:/opt/pycharm/bin:$PATH"

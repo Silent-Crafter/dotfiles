@@ -60,3 +60,5 @@ alias git-clone='git clone https://github.com/'
 alias lsblk='lsblk -o NAME,MAJ:MIN,RM,SIZE,RO,TYPE,FSTYPE,MOUNTPOINTS'
 #alias rm='trash -v'
 #alias docker='sudo docker'
+#alias waifu="curl -s \"$(curl -sL https://nekos.best/api/v2/neko | jq '.[][0].url')\" --output /tmp/waifu.png && nsxiv /tmp/waifu.png && rm /tmp/waifu.png"
+#alias wineshell='WINEPREFIX="/home/silentcrafter/Games/Lost Ruins/prefix" wine explorer /desktop=shell,1920x1080'

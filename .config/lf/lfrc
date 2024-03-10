@@ -100,7 +100,7 @@ cmd zip ${{
 }}
 
 set info size:time
-set hidden true
+set hidden false
 
 set icons
 set drawbox
